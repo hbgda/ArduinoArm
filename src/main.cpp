@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <Servo.h>
+#include <math.h>
+
 
 // Servo objects for controlling the position
 Servo baseServo;   
@@ -22,6 +24,7 @@ int hingeCurr = 90;
 int grabberCurr = 0;
 
 bool shouldUseKeyboard = false;
+bool pcConnected = false;
 
 void setup() {
 
@@ -40,6 +43,27 @@ void setup() {
     
 }
 
+// Check for changes
+void checkForUpdates(){
+    if (Serial.available() < 1) return;
+    const char* str = Serial.readString().c_str();
+    Serial.write(str);
+
+    if (str == "PC_CONNECT"){
+        pcConnected = true;
+    }
+    else if (str == "PC_DISCONNECT"){
+        pcConnected = false;
+    }
+    else if (str == "USE_KEYBOARD_ON"){
+        shouldUseKeyboard = true;
+    }
+    else if (str == "USE_KEYBOARD_OFF"){
+        shouldUseKeyboard = false;
+    }
+}
+
+// Check for keyboard input
 char keyboardInput(){
     if(Serial.available() > 0){
         char key_input = Serial.read();
@@ -50,6 +74,8 @@ char keyboardInput(){
 }
 
 void loop() {
+
+    checkForUpdates();
 
     if (shouldUseKeyboard){
         // Keyboard Control
@@ -98,8 +124,7 @@ void loop() {
                 break;
 
             // Toggle grabber
-            case '\n':
-            case '\r':
+            case 'g':
                 grabberCurr = grabberCurr == 180 ? 0 : 180;
                 grabberServo.write(grabberCurr);
                 delay(15);
